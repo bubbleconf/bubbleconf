@@ -41,6 +41,12 @@ jobs:
       - name: Run tests (via uv)
         run: uv run pytest -q
 
+      - name: "Integration test: run example"
+        run: |
+          set -e
+          cd example
+          uv run main.py --is_cool=1 --version=0.1.1 --number_of_things=42 --ratio=0.1337
+
   publish:
     name: Build and Publish (single runner)
     runs-on: ubuntu-latest

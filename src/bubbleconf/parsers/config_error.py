@@ -1,4 +1,5 @@
-from typing import Iterable
+from typing import Iterable, Optional
+import sys
 
 
 class ConfigError(Exception):
@@ -13,19 +14,32 @@ class ConfigError(Exception):
         self,
         missing: Iterable[str] | None = None,
         malformed: Iterable[str] | None = None,
+        *,
+        is_tty: Optional[bool] = None,
     ):
         self.missing = list(missing or [])
         self.malformed = list(malformed or [])
+        # Determine whether to emit ANSI styling. If caller doesn't supply
+        # an explicit value, assume stderr is the destination and check
+        # whether it's a TTY.
+        if is_tty is None:
+            try:
+                effective_is_tty = bool(sys.stderr and sys.stderr.isatty())
+            except Exception:
+                effective_is_tty = False
+        else:
+            effective_is_tty = bool(is_tty)
         # store structured data; message produced by __str__ or format()
-        super().__init__(self.__str__())
+        self._is_tty = effective_is_tty
 
     def __str__(self) -> str:
-        parts = []
-        if self.missing:
-            parts.append("Missing required fields: " + ", ".join(self.missing))
-        if self.malformed:
-            parts.append("Malformed values: " + ", ".join(self.malformed))
-        return "; ".join(parts) if parts else "Configuration error"
+        # Use the instance's TTY detection so printing the exception will
+        # include ANSI styling when appropriate.
+        try:
+            is_tty = bool(getattr(self, "_is_tty", False))
+        except Exception:
+            is_tty = False
+        return self.format(is_tty=is_tty)
 
     def format(self, is_tty: bool) -> str:
         """Return a formatted error message. If is_tty is True, include ANSI styling.
@@ -34,7 +48,12 @@ class ConfigError(Exception):
         bold red, malformed in bold yellow; field identifiers are bold cyan.
         """
         if not is_tty:
-            return self.__str__()
+            parts = []
+            if self.missing:
+                parts.append("Missing required fields: " + ", ".join(self.missing))
+            if self.malformed:
+                parts.append("Malformed values: " + ", ".join(self.malformed))
+            return "; ".join(parts) if parts else "Configuration error"
 
         BOLD = "\033[1m"
         RED = "\033[31m"
