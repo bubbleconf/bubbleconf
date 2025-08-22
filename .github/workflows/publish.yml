@@ -80,8 +80,7 @@ jobs:
             echo "tagged=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Patch pyproject for dev version
-        if: steps.version.outputs.tagged == 'false'
+      - name: Patch pyproject.toml version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           echo "Patching pyproject.toml to version=${VERSION}"
