@@ -70,9 +70,10 @@ jobs:
             LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
             # strip leading 'v' from latest tag if present
             LATEST_TAG=${LATEST_TAG#v}
-            SHORT_SHA=$(git rev-parse --short=7 HEAD)
-            # Use a PEP 440-compliant dev version: <base>.dev0+<sha>
-            DEV_VERSION="${LATEST_TAG}.dev0+${SHORT_SHA}"
+            # Use a PEP 440-compliant dev version: <base>.dev<epoch>
+            # epoch seconds ensures uniqueness and is numeric (allowed in devN)
+            EPOCH=$(date +%s)
+            DEV_VERSION="${LATEST_TAG}.dev${EPOCH}"
             echo "version=$DEV_VERSION" >> "$GITHUB_OUTPUT"
             echo "tagged=false" >> "$GITHUB_OUTPUT"
           fi
