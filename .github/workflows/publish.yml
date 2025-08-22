@@ -38,6 +38,8 @@ jobs:
   publish:
     name: Build and Publish (single runner)
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
     needs: test
     # only run publish once (not per-matrix) after tests succeed
     steps:
