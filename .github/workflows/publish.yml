@@ -29,8 +29,7 @@ jobs:
           python -m pip install --upgrade uv
 
       - name: Install project and test deps (via uv)
-        run: |
-          uv install || python -m pip install -e '.[dev]' || python -m pip install -e .
+        run: uv sync
 
       - name: Run tests (via uv)
         run: uv run pytest -q
@@ -91,8 +90,7 @@ jobs:
           sed -n '1,120p' pyproject.toml
 
       - name: Build distribution (via uv)
-        run: |
-          uv build
+        run: uv build
 
       - name: Publish to TestPyPI (via pypa/gh-action-pypi-publish)
         if: steps.version.outputs.tagged == 'false'
