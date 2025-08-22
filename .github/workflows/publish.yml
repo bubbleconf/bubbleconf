@@ -91,18 +91,19 @@ jobs:
         run: |
           uv build
 
-      - name: Publish to TestPyPI (via uv)
+      - name: Publish to TestPyPI (via pypa/gh-action-pypi-publish)
         if: steps.version.outputs.tagged == 'false'
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        run: |
-          set -e
-          uv publish --publish-url https://test.pypi.org/legacy/
+        uses: pypa/gh-action-pypi-publish@v1.12.4
+        with:
+          # Publish built distributions from the 'dist' directory to TestPyPI.
+          # Role-based auth (OIDC / trusted publisher) will be used if configured.
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist
 
-      - name: Publish to PyPI (via uv)
+      - name: Publish to PyPI (via pypa/gh-action-pypi-publish)
         if: steps.version.outputs.tagged == 'true'
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          set -e
-          uv publish
+        uses: pypa/gh-action-pypi-publish@v1.12.4
+        with:
+          # Publish built distributions from the 'dist' directory to PyPI.
+          # Role-based auth (OIDC / trusted publisher) will be used if configured.
+          packages-dir: dist
