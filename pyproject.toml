@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
 
-authors = [{ name = "Your Name", email = "you@example.com" }]
+authors = [{ name = "Felix Bjært Hargreaves", email = "not-a-real@email.com" }]
 
 license = { file = "LICENSE" }
 
@@ -27,3 +27,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]

@@ -1,4 +1,4 @@
-from dataclasses import MISSING
+from dataclasses import MISSING, is_dataclass, fields
 from typing import Type, TypeVar, Iterable, Callable, Dict, Any, Optional
 
 from .cli_parser import parse_provided_cli_args
@@ -40,7 +40,7 @@ def _json_source(clazz: Type[T]) -> Dict[str, Any]:
         return {}
 
 
-def parse_config_with_priority(
+def parse_config(
     clazz: Type[T],
     priority: Iterable[str] | None = None,
     sources: Optional[Dict[str, Callable[[Type[T]], Dict[str, Any]]]] = None,
@@ -55,7 +55,7 @@ def parse_config_with_priority(
     Returns an instance of the dataclass or raises `ConfigError` with
     aggregated missing/malformed information.
     """
-    if not hasattr(clazz, "__dataclass_fields__"):
+    if not is_dataclass(clazz):
         raise TypeError(f"{clazz.__name__} must be a dataclass")
 
     # Build resolvers map (name -> resolver callable). Built-ins are added
@@ -86,7 +86,7 @@ def parse_config_with_priority(
     missing = []
     malformed = []
 
-    for field in clazz.__dataclass_fields__.values():  # type: ignore
+    for field in fields(clazz):
         name = field.name
         chosen = False
         for src in priority:
@@ -115,17 +115,24 @@ def parse_config_with_priority(
                 if isinstance(raw_val, str):
                     result[name] = _cast_str_to_type(raw_val, field.type)
                 else:
-                    # direct type match
-                    if getattr(field.type, "__name__", None) and isinstance(
-                        raw_val, field.type
-                    ):
+                    # direct type match when the annotation is a runtime type
+                    # (annotations can be strings or typing objects; guard
+                    # against those). If we have a concrete class in
+                    # field.type, prefer isinstance match; otherwise try to
+                    # call the type if it's callable. Fall back to the raw
+                    # value when unsure.
+                    ft = field.type
+                    if isinstance(ft, type) and isinstance(raw_val, ft):
                         result[name] = raw_val
                     else:
-                        # attempt to convert
-                        try:
-                            result[name] = field.type(raw_val)
-                        except Exception:
-                            # fallback: accept raw value
+                        # only attempt to call ft if it's a real type
+                        # (and not a string or typing construct)
+                        if isinstance(ft, type) and callable(ft):
+                            try:
+                                result[name] = ft(raw_val)
+                            except Exception:
+                                result[name] = raw_val
+                        else:
                             result[name] = raw_val
             except Exception as exc:
                 malformed.append(f"{name}: {exc}")

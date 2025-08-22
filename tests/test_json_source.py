@@ -1,9 +1,9 @@
 import os
 import json
-import unittest
 from dataclasses import dataclass
+import pytest
 
-from pyconf.parsers.parse_priority import parse_config_with_priority
+from bubbleconf.parsers.parse_priority import parse_config
 
 
 @dataclass
@@ -14,26 +14,24 @@ class SampleConfig:
     is_enabled: bool
 
 
-class JsonSourceTest(unittest.TestCase):
-    def setUp(self):
-        # preserve environment
-        self._old_env = dict(os.environ)
-
-    def tearDown(self):
+@pytest.fixture(autouse=True)
+def preserved_env():
+    """Preserve and restore the process environment for each test."""
+    old = dict(os.environ)
+    try:
+        yield
+    finally:
         os.environ.clear()
-        os.environ.update(self._old_env)
-
-    def test_json_env_var_parsing(self):
-        payload = {"name": "Alice", "min_value": 3, "max_value": 7, "is_enabled": True}
-        os.environ["CONFIG_JSON"] = json.dumps(payload)
-
-        conf = parse_config_with_priority(SampleConfig, priority=("json", "default"))
-
-        self.assertEqual(conf.name, "Alice")
-        self.assertEqual(conf.min_value, 3)
-        self.assertEqual(conf.max_value, 7)
-        self.assertTrue(conf.is_enabled)
+        os.environ.update(old)
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_json_env_var_parsing():
+    payload = {"name": "Alice", "min_value": 3, "max_value": 7, "is_enabled": True}
+    os.environ["CONFIG_JSON"] = json.dumps(payload)
+
+    conf = parse_config(SampleConfig, priority=("json", "default"))
+
+    assert conf.name == "Alice"
+    assert conf.min_value == 3
+    assert conf.max_value == 7
+    assert conf.is_enabled is True

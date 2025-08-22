@@ -1,7 +1,5 @@
 # Annotation to denote a data class used for configuration
 
-# Annotation to denote a data class used for configuration
-
 
 def config(cls):
     """
