@@ -1,0 +1,6 @@
+{
+  "host": "json.local",
+  "port": 8080,
+  "retries": 3,
+  "mode": "safe"
+}

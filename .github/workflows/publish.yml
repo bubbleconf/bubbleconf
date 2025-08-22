@@ -48,7 +48,7 @@ jobs:
         run: |
           set -e
           cd example
-          uv run main.py --is_cool=1 --version=0.1.1 --number_of_things=42 --ratio=0.1337
+          PORT=1337 uv run main.py --host=localhost
 
   publish:
     name: Build and Publish (single runner)
