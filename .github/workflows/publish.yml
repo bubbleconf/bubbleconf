@@ -93,15 +93,15 @@ jobs:
       - name: Publish to TestPyPI (via uv)
         if: steps.version.outputs.tagged == 'false'
         env:
-          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          UV_PUBLISH_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
           set -e
-          uv publish --repository testpypi
+          uv publish --publish-url https://test.pypi.org/legacy/
 
       - name: Publish to PyPI (via uv)
         if: steps.version.outputs.tagged == 'true'
         env:
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           set -e
           uv publish
