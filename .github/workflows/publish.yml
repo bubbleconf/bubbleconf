@@ -29,7 +29,14 @@ jobs:
           python -m pip install --upgrade uv
 
       - name: Install project and test deps (via uv)
-        run: uv sync
+        run: |
+          set -e
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade uv
+          # Create or update lockfile if present; non-fatal
+          uv lock
+          # Sync installs packages into the project environment
+          uv sync
 
       - name: Run tests (via uv)
         run: uv run pytest -q
