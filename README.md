@@ -33,25 +33,15 @@ class MyConfig:
 	number_of_things: int = 0
 	ratio: float = 1.0
 
-def main():
-	cfg = parse_config(MyConfig)
-	print(cfg)
-
-if __name__ == '__main__':
-	main()
+cfg = parse_config(MyConfig)
+print(cfg)
 ```
 
-You can set values by environment variables (MYCONFIG_VERSION, MYCONFIG_IS_COOL, ...), by CLI flags, or by defaults in the dataclass. The parser chooses values in a predictable priority order.
+You can set values by environment variables (VERSION, IS_COOL, ...), by CLI flags, or by defaults in the dataclass. The parser chooses values in a predictable priority order.
 
-## CLI example (using the included example/ project)
+## CLI example
 
-From the repository root you can run:
-
-```bash
-uv run example/main.py --is_cool=1 --version=0.1.1 --number_of_things=42 --ratio=0.1337
-```
-
-This will print a populated `MyConfig` instance.
+![alt text](image-2.png)
 
 ## Advanced usage
 

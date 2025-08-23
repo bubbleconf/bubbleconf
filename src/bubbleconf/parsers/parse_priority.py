@@ -12,7 +12,7 @@ from .config_error import ConfigError
 T = TypeVar("T")
 
 logging.basicConfig()
-__logger = getLogger(__name__)
+__logger = getLogger("bubbleconf")
 __level = os.environ.get("BUBBLECONF_LOG_LEVEL", "INFO")
 __logger.setLevel(__level)
 
