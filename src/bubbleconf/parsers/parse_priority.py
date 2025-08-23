@@ -54,7 +54,7 @@ def parse_config(
     priority: Iterable[str] | None = None,
     sources: Optional[Dict[str, Callable[[Type[T]], Dict[str, Any]]]] = None,
     report: bool = False,
-) -> T | tuple[T, Dict[str, Dict[str, Any]]]:
+) -> T:
     """For each field, choose its value based on `priority`.
 
     `priority` is an iterable of source names in preference order. Built-in
@@ -137,11 +137,17 @@ def parse_config(
                     # call the type if it's callable. Fall back to the raw
                     # value when unsure.
                     ft = field.type
-                    if isinstance(ft, type) and isinstance(raw_val, ft):
-                        result[name] = raw_val
-                    else:
-                        # only attempt to call ft if it's a real type
-                        # (and not a string or typing construct)
+                    assigned = False
+                    # avoid passing typing generics (e.g. list[str]) to isinstance()
+                    try:
+                        if isinstance(ft, type) and isinstance(raw_val, ft):
+                            result[name] = raw_val
+                            assigned = True
+                    except TypeError:
+                        assigned = False
+
+                    if not assigned:
+                        # only attempt to call ft if it's a real runtime type
                         if isinstance(ft, type) and callable(ft):
                             try:
                                 result[name] = ft(raw_val)

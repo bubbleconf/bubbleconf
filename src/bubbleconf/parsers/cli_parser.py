@@ -48,12 +48,27 @@ def parse_provided_cli_args(clazz: Type[T]) -> dict:
     if not hasattr(clazz, "__dataclass_fields__"):
         raise TypeError(f"{clazz.__name__} must be a dataclass")
 
+    from typing import get_origin
+
     parser = argparse.ArgumentParser(add_help=False)
     for field in clazz.__dataclass_fields__.values():  # type: ignore
-        # don't supply a default so argparse will suppress missing values
-        # use type=str so we can perform centralized validation and collect
-        # all malformed-field errors instead of letting argparse exit.
-        parser.add_argument(f"--{field.name}", type=str, default=argparse.SUPPRESS)
+        # detect list-like annotations and use nargs='+' so argparse returns lists
+        ft = field.type
+        is_list = False
+        try:
+            is_list = get_origin(ft) is list or ft is list
+        except Exception:
+            is_list = False
+
+        if is_list:
+            parser.add_argument(
+                f"--{field.name}", nargs="+", type=str, default=argparse.SUPPRESS
+            )
+        else:
+            # don't supply a default so argparse will suppress missing values
+            # use type=str so we can perform centralized validation and collect
+            # all malformed-field errors instead of letting argparse exit.
+            parser.add_argument(f"--{field.name}", type=str, default=argparse.SUPPRESS)
 
     normalized = [a.lower() if a.startswith("--") else a for a in sys.argv[1:]]
     ns, _ = parser.parse_known_args(normalized)

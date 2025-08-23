@@ -5,6 +5,23 @@ T = TypeVar("T")
 
 
 def _cast_str_to_type(value: str, to_type):
+    # quick JSON detection: if the string looks like a JSON array or object,
+    # attempt to parse it so env vars like '["a","b"]' become lists.
+    try:
+        s = value.strip()
+        if (s.startswith("[") and s.endswith("]")) or (
+            s.startswith("{") and s.endswith("}")
+        ):
+            import json
+
+            try:
+                return json.loads(s)
+            except Exception:
+                # fall through to normal casting
+                pass
+    except Exception:
+        pass
+
     if to_type is int:
         return int(value)
     if to_type is float:
