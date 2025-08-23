@@ -2,7 +2,7 @@
 
 A tiny, battery-included configuration helper for Python projects. Use a dataclass to declare your configuration, then populate it from command-line arguments, environment variables, and sensible defaults with predictable priority.
 <p align="center">
-	<img src="logo.png" alt="bubbleconf logo" width="240" />
+	<img src="logo.svg" alt="bubbleconf logo" width="240" />
 </p>
 
 ## Installation
