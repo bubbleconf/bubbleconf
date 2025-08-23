@@ -6,15 +6,14 @@ Bubbleconf — simple, type-safe configuration from CLI, env, and defaults
 
 A tiny, battery-included configuration helper for Python projects. Use a dataclass to declare your configuration, then populate it from command-line arguments, environment variables, and sensible defaults with predictable priority.
 
-Why bubbleconf?
-- Explicit, typed configuration using dataclasses.
-- Automatic coercion for common types (bool, int, float, str).
-- Combines CLI, env, and defaults with clear precedence.
-- Small, dependency-light, and CI-friendly.
+<!--
+Bubbleconf — simple, type-safe configuration from CLI, env, and defaults
+-->
 
-## Quick install
+.. image:: logo.png
+	:align: center
 
-Install from PyPI (once published):
+# bubbleconf
 
 ```bash
 pip install bubbleconf
