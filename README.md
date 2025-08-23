@@ -41,7 +41,7 @@ You can set values by environment variables (VERSION, IS_COOL, ...), by CLI flag
 
 ## CLI example
 
-![alt text](image-2.png)
+![](https://raw.githubusercontent.com/bubbleconf/bubbleconf/main/image-2.png)
 
 ## Advanced usage
 
