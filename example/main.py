@@ -24,7 +24,7 @@ def main():
     # parse_config will consult the built-in sources: CLI, env, and the example JSON
     # resolver (which will read ./config.json in this example). You can still
     # override values with env vars or CLI flags.
-    cfg = parse_config(ServiceConfig)
+    cfg = parse_config(ServiceConfig, report=True)
     print(cfg)
 
 

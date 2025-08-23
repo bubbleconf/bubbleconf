@@ -1,4 +1,8 @@
 from dataclasses import MISSING, is_dataclass, fields
+from logging import getLogger
+import logging
+import json
+import os
 from typing import Type, TypeVar, Iterable, Callable, Dict, Any, Optional
 
 from .cli_parser import parse_provided_cli_args
@@ -6,6 +10,11 @@ from .env_parser import provided_env_vars_for, _cast_str_to_type
 from .config_error import ConfigError
 
 T = TypeVar("T")
+
+logging.basicConfig()
+__logger = getLogger(__name__)
+__level = os.environ.get("BUBBLECONF_LOG_LEVEL", "INFO")
+__logger.setLevel(__level)
 
 
 def _json_source(clazz: Type[T]) -> Dict[str, Any]:
@@ -44,7 +53,8 @@ def parse_config(
     clazz: Type[T],
     priority: Iterable[str] | None = None,
     sources: Optional[Dict[str, Callable[[Type[T]], Dict[str, Any]]]] = None,
-) -> T:
+    report: bool = False,
+) -> T | tuple[T, Dict[str, Dict[str, Any]]]:
     """For each field, choose its value based on `priority`.
 
     `priority` is an iterable of source names in preference order. Built-in
@@ -70,7 +80,7 @@ def parse_config(
     if sources:
         resolvers.update(sources)
 
-    priority = tuple(priority or ("cli", "env", "default"))
+    priority = tuple(priority or ("cli", "env", "json", "default"))
 
     # Validate that non-'default' entries exist in resolvers
     unknown = [p for p in priority if p != "default" and p not in resolvers]
@@ -85,7 +95,7 @@ def parse_config(
     result: Dict[str, Any] = {}
     missing = []
     malformed = []
-
+    provenance: Dict[str, Dict[str, Any]] = {}
     for field in fields(clazz):
         name = field.name
         chosen = False
@@ -97,6 +107,11 @@ def parse_config(
                     missing.append(f"{name} (type: {tname})")
                 else:
                     result[name] = default
+                    provenance[name] = {
+                        "source": "default",
+                        "raw": None,
+                        "value": result[name],
+                    }
                 chosen = True
                 break
 
@@ -134,6 +149,13 @@ def parse_config(
                                 result[name] = raw_val
                         else:
                             result[name] = raw_val
+
+                # record provenance for this field
+                provenance[name] = {
+                    "source": src,
+                    "raw": raw_val,
+                    "value": result[name],
+                }
             except Exception as exc:
                 malformed.append(f"{name}: {exc}")
             chosen = True
@@ -146,8 +168,99 @@ def parse_config(
                 missing.append(f"{name} (type: {tname})")
             else:
                 result[name] = default
+                provenance[name] = {
+                    "source": "default",
+                    "raw": None,
+                    "value": result[name],
+                }
 
     if missing or malformed:
         raise ConfigError(missing=missing, malformed=malformed)
 
-    return clazz(**result)
+    instance = clazz(**result)
+    if report:
+        log_parsed_config(provenance)
+
+    return instance
+
+
+def log_parsed_config(provenance):
+    """Log provenance as a strictly aligned table.
+
+    Columns: Field | Source | Raw | Value
+    Raw and Value are compact JSON-serialized to keep table single-line cells.
+    """
+    __logger.debug("Config parsed successfully")
+
+    # Build rows with compact JSON for raw/value
+    rows = []
+    for name, info in provenance.items():
+        if isinstance(info, dict):
+            src = info.get("source")
+            raw = info.get("raw")
+            val = info.get("value")
+        else:
+            src = None
+            raw = None
+            val = info
+
+        # compact JSON for raw and value (None -> null)
+        try:
+            raw_s = json.dumps(raw, separators=(",", ":"), sort_keys=True)
+        except Exception:
+            raw_s = str(raw)
+        try:
+            val_s = json.dumps(val, separators=(",", ":"), sort_keys=True)
+        except Exception:
+            val_s = str(val)
+
+        rows.append((name, str(src), raw_s, val_s))
+
+    # compute column widths
+    hdr = ("Field", "Source", "Raw", "Value")
+    cols = list(zip(*([hdr] + rows))) if rows else list(zip(*([hdr])))
+    widths = [max((len(c) for c in col), default=0) for col in cols]
+
+    # build each cell using computed widths, then apply ANSI styling
+    def _pad(cell: str, w: int) -> str:
+        return cell.ljust(w)
+
+    # styling codes
+    BOLD = "\033[1m"
+    RESET = "\033[0m"
+    SOURCE_COLORS = {
+        "cli": "\033[94m",
+        "env": "\033[92m",
+        "json": "\033[95m",
+        "default": "\033[90m",
+    }
+
+    # header (bold)
+    header_cells = [BOLD + _pad(hdr[i], widths[i]) + RESET for i in range(len(hdr))]
+    __logger.debug("  %s  |  %s  |  %s  |  %s", *header_cells)
+
+    # separator
+    sep = "  " + "  |  ".join("-" * w for w in widths)
+    __logger.debug(sep)
+
+    # rows
+    # styling for source column
+    BOLD = "\033[1m"
+    RESET = "\033[0m"
+    SOURCE_COLORS = {
+        "cli": "\033[93m",  # bright yellow
+        "env": "\033[92m",  # bright green
+        "json": "\033[95m",  # magenta
+        "default": "\033[90m",  # dim gray
+    }
+
+    for r in rows:
+        # pad cells
+        padded = [_pad(r[i], widths[i]) for i in range(len(r))]
+        # normalize and colorize source column (index 1)
+        src_plain = (r[1] or "").lower()
+        color = SOURCE_COLORS.get(src_plain)
+        if color:
+            padded[1] = color + BOLD + padded[1] + RESET
+
+        __logger.debug("  %s  |  %s  |  %s  |  %s", *padded)
