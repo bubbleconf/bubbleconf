@@ -22,7 +22,7 @@ python -m pip install --upgrade uv
 uv sync
 ```
 
-## Hello example (programmatic)
+## Short example
 
 ```python
 @config
@@ -37,8 +37,12 @@ cfg = parse_config(MyConfig)
 print(cfg)
 ```
 
-You can set values by environment variables (VERSION, IS_COOL, ...), by CLI flags, or by defaults in the dataclass. The parser chooses values in a predictable priority order.
+You can set values by environment variables (`VERSION`, `IS_COOL`, ...), by CLI flags, or by defaults in the dataclass. The parser chooses values in a predictable priority order:
 
+```console
+$ VERSION="0.1.2" uv run test.py --is_cool=true                           
+MyConfig(version='0.1.2', is_cool=True, number_of_things=0, ratio=1.0)
+```
 ## CLI example
 
 ![](https://raw.githubusercontent.com/bubbleconf/bubbleconf/main/image-2.png)
