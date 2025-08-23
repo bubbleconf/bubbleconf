@@ -28,10 +28,10 @@ uv sync
 @config
 @dataclass
 class MyConfig:
-	version: str
-	is_cool: bool = False
-	number_of_things: int = 0
-	ratio: float = 1.0
+  version: str
+  is_cool: bool = False
+  number_of_things: int = 0
+  ratio: float = 1.0
 
 cfg = parse_config(MyConfig)
 print(cfg)
