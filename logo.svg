@@ -1,33 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" role="img" aria-label="bubbleconf logo">
-  <defs>
-    <linearGradient id="g" x1="0" x2="1">
-      <stop offset="0" stop-color="#3AB0FF"/>
-      <stop offset="1" stop-color="#6AE3C9"/>
-    </linearGradient>
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0b3b3b" flood-opacity="0.12"/>
-    </filter>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" role="img"
+ aria-label="bubbleconf logo">
+ <defs>
+  <linearGradient id="g" x1="0" x2="1">
+   <stop offset="0" stop-color="#3AB0FF" />
+   <stop offset="1" stop-color="#6AE3C9" />
+  </linearGradient>
+  <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+   <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0b3b3b" flood-opacity="0.12" />
+  </filter>
+ </defs>
 
-  <!-- speech bubble mark -->
-  <g transform="translate(40,20)">
-    <path d="M60 10a50 50 0 1 1-0.001 0z" fill="url(#g)" filter="url(#shadow)"/>
-    <path d="M25 55 L10 80 L35 68" fill="url(#g)"/>
-    <g transform="translate(0,0)">
-      <circle cx="60" cy="60" r="46" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="6"/>
-      <!-- three dots to imply "config" or "bubbles" -->
-      <circle cx="46" cy="56" r="5" fill="#ffffff" fill-opacity="0.95"/>
-      <circle cx="60" cy="56" r="5" fill="#ffffff" fill-opacity="0.95"/>
-      <circle cx="74" cy="56" r="5" fill="#ffffff" fill-opacity="0.95"/>
-    </g>
+ <!-- speech bubble mark -->
+ <g transform="translate(40,20)">
+  <path d="M60 10a50 50 0 1 1-0.001 0z" fill="url(#g)" filter="url(#shadow)" />
+  <path d="M25 55 L10 80 L35 68" fill="url(#g)" />
+  <g transform="translate(0,0)">
+   <circle cx="60" cy="60" r="46" fill="none" stroke="#ffffff" stroke-opacity="0.18"
+    stroke-width="6" />
+   <!-- three dots to imply "config" or "bubbles" -->
+   <circle cx="46" cy="56" r="5" fill="#ffffff" fill-opacity="0.95" />
+   <circle cx="60" cy="56" r="5" fill="#ffffff" fill-opacity="0.95" />
+   <circle cx="74" cy="56" r="5" fill="#ffffff" fill-opacity="0.95" />
   </g>
+ </g>
 
-  <!-- wordmark: single-line -->
-  <g transform="translate(170,125)">
-    <text x="0" y="0" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial" font-weight="700" font-size="56" fill="#0F1724">bubbleconf</text>
-  </g>
+ <!-- wordmark: single-line -->
+ <g transform="translate(170,125)">
+  <text x="0" y="0"
+   font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial"
+   font-weight="700" font-size="56" fill="#0F1724">bubbleconf</text>
+ </g>
 
-  <!-- accessibility: invisible background for consistent sizing -->
-  <rect x="0" y="0" width="600" height="200" fill="transparent"/>
+ <!-- accessibility: invisible background for consistent sizing -->
+ <rect x="0" y="0" width="600" height="200" fill="transparent" />
 </svg>
