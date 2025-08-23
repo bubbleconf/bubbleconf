@@ -131,8 +131,8 @@ Note: pass `json_file="config.json"` (or whatever API your project exposes for l
 3) Export an environment variable that will override the JSON value (prefix uses the dataclass name):
 
 ```bash
-export SERVICECONFIG_PORT=9090
-export SERVICECONFIG_RETRIES=5
+export PORT=9090
+export RETRIES=5
 ```
 
 4) Run the program with a CLI flag that overrides env and JSON:
@@ -149,7 +149,7 @@ ServiceConfig(host='cli.local', port=9090, retries=5, debug=False, mode='fast')
 
 Explanation:
 - `host`: came from the CLI (`cli.local`).
-- `port`: came from the environment (`SERVICECONFIG_PORT=9090`).
-- `retries`: came from the environment (`SERVICECONFIG_RETRIES=5`) and overrides the JSON value of 3.
+- `port`: came from the environment (`PORT=9090`).
+- `retries`: came from the environment (`RETRIES=5`) and overrides the JSON value of 3.
 - `mode`: came from the CLI (`fast`), overriding the JSON value of `safe`.
 - `debug`: left at the dataclass default `False` (not set in JSON/env/CLI).
