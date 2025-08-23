@@ -1,19 +1,11 @@
-<!--
-Bubbleconf — simple, type-safe configuration from CLI, env, and defaults
--->
-
 # bubbleconf
 
 A tiny, battery-included configuration helper for Python projects. Use a dataclass to declare your configuration, then populate it from command-line arguments, environment variables, and sensible defaults with predictable priority.
+<p align="center">
+	<img src="logo.png" alt="bubbleconf logo" width="240" />
+</p>
 
-<!--
-Bubbleconf — simple, type-safe configuration from CLI, env, and defaults
--->
-
-.. image:: logo.png
-	:align: center
-
-# bubbleconf
+## Installation
 
 ```bash
 pip install bubbleconf
@@ -30,12 +22,7 @@ uv sync
 
 ## Hello example (programmatic)
 
-Create a dataclass and decorate it with `@config`. Then call `parse_config` to gather values from supported sources.
-
 ```python
-from dataclasses import dataclass
-from bubbleconf import config, parse_config
-
 @config
 @dataclass
 class MyConfig:
