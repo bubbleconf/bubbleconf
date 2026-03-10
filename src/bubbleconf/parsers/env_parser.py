@@ -1,7 +1,12 @@
 from dataclasses import MISSING
-from typing import Type, TypeVar
+from typing import Type, TypeVar, get_origin, get_args
 
 T = TypeVar("T")
+
+
+def _is_list_type(tp) -> bool:
+    """Return True when *tp* is ``list``, ``list[X]``, or ``List[X]``."""
+    return tp is list or get_origin(tp) is list
 
 
 def _cast_str_to_type(value: str, to_type):
@@ -21,6 +26,15 @@ def _cast_str_to_type(value: str, to_type):
                 pass
     except Exception:
         pass
+
+    if _is_list_type(to_type):
+        # comma-separated string → list, e.g. "a,b,c" → ["a", "b", "c"]
+        items = [item.strip() for item in value.split(",")]
+        # if the generic has an inner type (e.g. list[int]), cast each element
+        inner_args = get_args(to_type)
+        if inner_args and inner_args[0] is not str:
+            return [_cast_str_to_type(item, inner_args[0]) for item in items]
+        return items
 
     if to_type is int:
         return int(value)

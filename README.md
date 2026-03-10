@@ -25,7 +25,6 @@ uv sync
 ## Short example
 
 ```python
-@config
 @dataclass
 class MyConfig:
   version: str

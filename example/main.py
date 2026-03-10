@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from bubbleconf import config, parse_config
+from bubbleconf import parse_config
 
 
-@config
 @dataclass
 class ServiceConfig:
     host: str

@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 
 [manifest]
@@ -10,7 +10,7 @@ members = [
 
 [[package]]
 name = "bubbleconf"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 
 [package.dev-dependencies]

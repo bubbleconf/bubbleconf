@@ -3,7 +3,6 @@
 This package exposes a compact, well-documented surface intended for
 consumers of the library. The public API is intentionally small:
 
-- ``config`` — a decorator used to mark configuration dataclasses.
 - ``parse_config`` — the high-level function that populates a dataclass
     from configuration sources (CLI, environment, JSON, ...).
 - ``ConfigError`` — exception raised when required fields are missing or
@@ -24,9 +23,8 @@ submodule.
 
 Examples
 --------
-from bubbleconf import config, parse_config
+from bubbleconf import parse_config
 
-@config
 class MyConfig:
         host: str
         port: int = 8080
@@ -34,11 +32,10 @@ class MyConfig:
 cfg = parse_config(MyConfig)
 """
 
-from .config_annotation import config
 from .parsers.parse_priority import parse_config
 from .parsers.config_error import ConfigError
 
-__all__ = ["config", "parse_config", "ConfigError"]
+__all__ = ["parse_config", "ConfigError"]
 
 
 def __getattr__(name: str):
