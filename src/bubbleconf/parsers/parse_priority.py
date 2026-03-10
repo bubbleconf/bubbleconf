@@ -6,7 +6,7 @@ import os
 from typing import Type, TypeVar, Iterable, Callable, Dict, Any, Optional
 
 from .cli_parser import parse_provided_cli_args
-from .env_parser import provided_env_vars_for, _cast_str_to_type
+from .env_parser import provided_env_vars_for, _cast_str_to_type, _is_list_type
 from .config_error import ConfigError
 
 T = TypeVar("T")
@@ -129,6 +129,16 @@ def parse_config(
                 # try to coerce via field.type or accept as-is when types match.
                 if isinstance(raw_val, str):
                     result[name] = _cast_str_to_type(raw_val, field.type)
+                elif isinstance(raw_val, list) and _is_list_type(field.type):
+                    # Flatten comma-separated entries so that e.g.
+                    # ["a,b", "c"] becomes ["a", "b", "c"].
+                    flat = []
+                    for item in raw_val:
+                        if isinstance(item, str) and "," in item:
+                            flat.extend(s.strip() for s in item.split(","))
+                        else:
+                            flat.append(item)
+                    result[name] = flat
                 else:
                     # direct type match when the annotation is a runtime type
                     # (annotations can be strings or typing objects; guard

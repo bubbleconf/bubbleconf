@@ -19,3 +19,12 @@ def test_cli_parses_list(monkeypatch):
     assert "hosts" in data
     assert data["hosts"] == ["a.example", "b.example"]
     assert data["mode"] == "fast"
+
+
+def test_cli_comma_separated_list(monkeypatch):
+    """--hosts a.example,b.example should be split into a real list."""
+    monkeypatch.setattr(
+        sys, "argv", ["prog", "--hosts", "a.example,b.example,c.example"]
+    )
+    cfg = parse_config(MyConfig)
+    assert cfg.hosts == ["a.example", "b.example", "c.example"]
