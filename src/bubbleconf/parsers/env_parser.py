@@ -1,5 +1,6 @@
 from dataclasses import MISSING
-from typing import Type, TypeVar, get_origin, get_args
+import builtins
+from typing import Type, TypeVar, get_origin, get_args, get_type_hints
 
 T = TypeVar("T")
 
@@ -55,6 +56,27 @@ def _cast_str_to_type(value: str, to_type):
         return value
 
 
+def _resolve_field_type(field_type, clazz: type):
+    """Resolve a possibly-stringified annotation to a real type."""
+    if isinstance(field_type, type):
+        return field_type
+    if isinstance(field_type, str):
+        # Try get_type_hints first (handles 'list[int]' etc.)
+        try:
+            hints = get_type_hints(clazz)
+            for _name, hint in hints.items():
+                if str(field_type) == str(hint) or (
+                    hasattr(hint, "__name__") and hint.__name__ == field_type
+                ):
+                    return hint
+        except Exception:
+            pass
+        resolved = getattr(builtins, field_type, None)
+        if isinstance(resolved, type):
+            return resolved
+    return field_type
+
+
 def parse_config_from_env_vars(clazz: Type[T]) -> T:
     """Parse configuration from environment variables (case-insensitive).
 
@@ -90,7 +112,8 @@ def parse_config_from_env_vars(clazz: Type[T]) -> T:
                 )
             result[field.name] = default
         else:
-            result[field.name] = _cast_str_to_type(raw, field.type)
+            ft = _resolve_field_type(field.type, clazz)
+            result[field.name] = _cast_str_to_type(raw, ft)
 
     return clazz(**result)
 

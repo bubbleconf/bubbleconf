@@ -6,7 +6,12 @@ import os
 from typing import Type, TypeVar, Iterable, Callable, Dict, Any, Optional
 
 from .cli_parser import parse_provided_cli_args
-from .env_parser import provided_env_vars_for, _cast_str_to_type, _is_list_type
+from .env_parser import (
+    provided_env_vars_for,
+    _cast_str_to_type,
+    _is_list_type,
+    _resolve_field_type,
+)
 from .config_error import ConfigError
 
 T = TypeVar("T")
@@ -98,12 +103,13 @@ def parse_config(
     provenance: Dict[str, Dict[str, Any]] = {}
     for field in fields(clazz):
         name = field.name
+        ft = _resolve_field_type(field.type, clazz)
         chosen = False
         for src in priority:
             if src == "default":
                 default = field.default if field.default != MISSING else None
                 if default is None:
-                    tname = getattr(field.type, "__name__", str(field.type))
+                    tname = getattr(ft, "__name__", str(ft))
                     missing.append(f"{name} (type: {tname})")
                 else:
                     result[name] = default
@@ -126,10 +132,10 @@ def parse_config(
             raw_val = src_map[name]
             try:
                 # If value is a string, use the standard caster; otherwise
-                # try to coerce via field.type or accept as-is when types match.
+                # try to coerce via ft or accept as-is when types match.
                 if isinstance(raw_val, str):
-                    result[name] = _cast_str_to_type(raw_val, field.type)
-                elif isinstance(raw_val, list) and _is_list_type(field.type):
+                    result[name] = _cast_str_to_type(raw_val, ft)
+                elif isinstance(raw_val, list) and _is_list_type(ft):
                     # Flatten comma-separated entries so that e.g.
                     # ["a,b", "c"] becomes ["a", "b", "c"].
                     flat = []
@@ -143,10 +149,9 @@ def parse_config(
                     # direct type match when the annotation is a runtime type
                     # (annotations can be strings or typing objects; guard
                     # against those). If we have a concrete class in
-                    # field.type, prefer isinstance match; otherwise try to
+                    # ft, prefer isinstance match; otherwise try to
                     # call the type if it's callable. Fall back to the raw
                     # value when unsure.
-                    ft = field.type
                     assigned = False
                     # avoid passing typing generics (e.g. list[str]) to isinstance()
                     try:
@@ -180,7 +185,7 @@ def parse_config(
         if not chosen:
             default = field.default if field.default != MISSING else None
             if default is None:
-                tname = getattr(field.type, "__name__", str(field.type))
+                tname = getattr(ft, "__name__", str(ft))
                 missing.append(f"{name} (type: {tname})")
             else:
                 result[name] = default
