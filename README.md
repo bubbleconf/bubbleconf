@@ -101,6 +101,28 @@ Resolved configuration: MyConfig
 └────────┴───────────┴────────┘
 ```
 
+### Marking fields as secret
+
+Use `typing.Annotated` with the `Secret` marker on any field that should
+never appear in logs. Its value is replaced with `"***"` in both
+`pretty_log=True` and `report=True` output, while the real value is
+still set on the dataclass instance:
+
+```python
+from dataclasses import dataclass
+from typing import Annotated
+from bubbleconf import Secret, parse_config
+
+@dataclass
+class ServiceConfig:
+    name: str
+    api_key: Annotated[str, Secret]
+    db_password: Annotated[str, Secret] = "dev"
+
+cfg = parse_config(ServiceConfig, pretty_log=True)
+# cfg.api_key contains the real value; the log shows "***"
+```
+
 ## Contributing
 
 PRs are welcome. The project uses `uv` to manage the local environment. Run tests with:

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from bubbleconf import parse_config
+from typing import Annotated
+from bubbleconf import Secret, parse_config
 
 
 @dataclass
@@ -9,6 +10,7 @@ class ServiceConfig:
     retries: int = 1
     debug: bool = False
     mode: str = "default"
+    api_key: Annotated[str, Secret] = "dev-key"
 
 
 cfg = parse_config(ServiceConfig, report=True, pretty_log=True)

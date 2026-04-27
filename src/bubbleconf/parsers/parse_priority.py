@@ -3,7 +3,18 @@ from logging import getLogger
 import logging
 import json
 import os
-from typing import Type, TypeVar, Iterable, Callable, Dict, Any, Optional
+from typing import (
+    Type,
+    TypeVar,
+    Iterable,
+    Callable,
+    Dict,
+    Any,
+    Optional,
+    get_type_hints,
+    get_origin,
+    get_args,
+)
 
 from .cli_parser import parse_provided_cli_args
 from .env_parser import (
@@ -13,6 +24,7 @@ from .env_parser import (
     _resolve_field_type,
 )
 from .dotenv_parser import provided_dotenv_vars_for
+from .markers import Secret, _SecretMarker
 from .config_error import ConfigError
 
 T = TypeVar("T")
@@ -100,6 +112,13 @@ def parse_config(
     # collect provided source maps once (call resolvers lazily)
     cache: Dict[str, Dict[str, Any]] = {}
 
+    # Resolve type hints with Annotated metadata preserved so we can detect
+    # the ``Secret`` marker. Falls back to an empty mapping on errors.
+    try:
+        annotated_hints = get_type_hints(clazz, include_extras=True)
+    except Exception:
+        annotated_hints = {}
+
     result: Dict[str, Any] = {}
     missing = []
     malformed = []
@@ -107,6 +126,20 @@ def parse_config(
     for field in fields(clazz):
         name = field.name
         ft = _resolve_field_type(field.type, clazz)
+
+        # Detect Secret via Annotated metadata; if present, unwrap to inner type.
+        annotated = annotated_hints.get(name)
+        is_secret = False
+        if annotated is not None and get_origin(annotated) is not None:
+            args = get_args(annotated)
+            if args:
+                inner, *extras = args
+                for entry in extras:
+                    if entry is Secret or isinstance(entry, _SecretMarker):
+                        is_secret = True
+                        break
+                if is_secret and isinstance(inner, type):
+                    ft = inner
         chosen = False
         for src in priority:
             if src == "default":
@@ -120,6 +153,7 @@ def parse_config(
                         "source": "default",
                         "raw": None,
                         "value": result[name],
+                        "secret": is_secret,
                     }
                 chosen = True
                 break
@@ -179,6 +213,7 @@ def parse_config(
                     "source": src,
                     "raw": raw_val,
                     "value": result[name],
+                    "secret": is_secret,
                 }
             except Exception as exc:
                 malformed.append(f"{name}: {exc}")
@@ -196,6 +231,7 @@ def parse_config(
                     "source": "default",
                     "raw": None,
                     "value": result[name],
+                    "secret": is_secret,
                 }
 
     if missing or malformed:
@@ -225,20 +261,26 @@ def log_parsed_config(provenance):
             src = info.get("source")
             raw = info.get("raw")
             val = info.get("value")
+            secret = bool(info.get("secret", False))
         else:
             src = None
             raw = None
             val = info
+            secret = False
 
-        # compact JSON for raw and value (None -> null)
-        try:
-            raw_s = json.dumps(raw, separators=(",", ":"), sort_keys=True)
-        except Exception:
-            raw_s = str(raw)
-        try:
-            val_s = json.dumps(val, separators=(",", ":"), sort_keys=True)
-        except Exception:
-            val_s = str(val)
+        if secret:
+            raw_s = '"***"' if raw is not None else "null"
+            val_s = '"***"' if val is not None else "null"
+        else:
+            # compact JSON for raw and value (None -> null)
+            try:
+                raw_s = json.dumps(raw, separators=(",", ":"), sort_keys=True)
+            except Exception:
+                raw_s = str(raw)
+            try:
+                val_s = json.dumps(val, separators=(",", ":"), sort_keys=True)
+            except Exception:
+                val_s = str(val)
 
         rows.append((name, str(src), raw_s, val_s))
 
@@ -339,13 +381,18 @@ def pretty_log_config(name: str, provenance: Dict[str, Any]) -> None:
         if isinstance(info, dict):
             src = str(info.get("source") or "")
             val = info.get("value")
+            secret = bool(info.get("secret", False))
         else:
             src = ""
             val = info
-        try:
-            val_s = json.dumps(val, separators=(", ", ": "), sort_keys=True)
-        except Exception:
-            val_s = str(val)
+            secret = False
+        if secret:
+            val_s = '"***"' if val is not None else "null"
+        else:
+            try:
+                val_s = json.dumps(val, separators=(", ", ": "), sort_keys=True)
+            except Exception:
+                val_s = str(val)
         rows.append((field_name, val_s, src))
 
     hdr = ("Field", "Value", "Source")

@@ -34,8 +34,9 @@ cfg = parse_config(MyConfig)
 
 from .parsers.parse_priority import parse_config
 from .parsers.config_error import ConfigError
+from .parsers.markers import Secret
 
-__all__ = ["parse_config", "ConfigError"]
+__all__ = ["parse_config", "ConfigError", "Secret"]
 
 
 def __getattr__(name: str):

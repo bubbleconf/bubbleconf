@@ -35,7 +35,9 @@ def test_pretty_log_emits_info_records(caplog, monkeypatch):
     assert cfg.name == "Alice"
     assert cfg.port == 9000
 
-    info_messages = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
+    info_messages = [
+        r.getMessage() for r in caplog.records if r.levelno == logging.INFO
+    ]
     joined = "\n".join(info_messages)
     assert "Resolved configuration: SampleConfig" in joined
     assert "Field" in joined and "Value" in joined and "Source" in joined
@@ -51,7 +53,9 @@ def test_pretty_log_off_by_default(caplog):
     caplog.set_level(logging.INFO, logger="bubbleconf")
     os.environ["NAME"] = "Alice"
     parse_config(SampleConfig)
-    info_messages = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
+    info_messages = [
+        r.getMessage() for r in caplog.records if r.levelno == logging.INFO
+    ]
     assert all("Resolved configuration" not in m for m in info_messages)
 
 
@@ -62,7 +66,9 @@ def test_pretty_log_no_color_when_no_color_env(monkeypatch, caplog):
         "Demo",
         {"name": {"source": "env", "raw": "Alice", "value": "Alice"}},
     )
-    info_messages = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
+    info_messages = [
+        r.getMessage() for r in caplog.records if r.levelno == logging.INFO
+    ]
     joined = "\n".join(info_messages)
     assert "\033[" not in joined
 
@@ -75,6 +81,8 @@ def test_pretty_log_force_color(monkeypatch, caplog):
         "Demo",
         {"name": {"source": "env", "raw": "Alice", "value": "Alice"}},
     )
-    info_messages = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
+    info_messages = [
+        r.getMessage() for r in caplog.records if r.levelno == logging.INFO
+    ]
     joined = "\n".join(info_messages)
     assert "\033[" in joined
