@@ -11,6 +11,6 @@ class ServiceConfig:
     mode: str = "default"
 
 
-cfg = parse_config(ServiceConfig, report=True)
+cfg = parse_config(ServiceConfig, report=True, pretty_log=True)
 print()
 print(cfg)

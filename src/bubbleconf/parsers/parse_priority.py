@@ -12,6 +12,7 @@ from .env_parser import (
     _is_list_type,
     _resolve_field_type,
 )
+from .dotenv_parser import provided_dotenv_vars_for
 from .config_error import ConfigError
 
 T = TypeVar("T")
@@ -59,6 +60,7 @@ def parse_config(
     priority: Iterable[str] | None = None,
     sources: Optional[Dict[str, Callable[[Type[T]], Dict[str, Any]]]] = None,
     report: bool = False,
+    pretty_log: bool = False,
 ) -> T:
     """For each field, choose its value based on `priority`.
 
@@ -80,12 +82,13 @@ def parse_config(
     resolvers: Dict[str, Callable[[Type[T]], Dict[str, Any]]] = {
         "cli": parse_provided_cli_args,
         "env": provided_env_vars_for,
+        "dotenv": provided_dotenv_vars_for,
         "json": _json_source,  # example built-in resolver
     }
     if sources:
         resolvers.update(sources)
 
-    priority = tuple(priority or ("cli", "env", "json", "default"))
+    priority = tuple(priority or ("cli", "env", "dotenv", "json", "default"))
 
     # Validate that non-'default' entries exist in resolvers
     unknown = [p for p in priority if p != "default" and p not in resolvers]
@@ -201,6 +204,8 @@ def parse_config(
     instance = clazz(**result)
     if report:
         log_parsed_config(provenance)
+    if pretty_log:
+        pretty_log_config(clazz.__name__, provenance)
 
     return instance
 
@@ -252,6 +257,7 @@ def log_parsed_config(provenance):
     SOURCE_COLORS = {
         "cli": "\033[94m",
         "env": "\033[92m",
+        "dotenv": "\033[96m",
         "json": "\033[95m",
         "default": "\033[90m",
     }
@@ -271,6 +277,7 @@ def log_parsed_config(provenance):
     SOURCE_COLORS = {
         "cli": "\033[93m",  # bright yellow
         "env": "\033[92m",  # bright green
+        "dotenv": "\033[96m",  # bright cyan
         "json": "\033[95m",  # magenta
         "default": "\033[90m",  # dim gray
     }
@@ -285,3 +292,97 @@ def log_parsed_config(provenance):
             padded[1] = color + BOLD + padded[1] + RESET
 
         __logger.debug("  %s  |  %s  |  %s  |  %s", *padded)
+
+
+# ANSI styling shared by pretty_log_config
+_RESET = "\033[0m"
+_BOLD = "\033[1m"
+_DIM = "\033[2m"
+_CYAN = "\033[36m"
+_SOURCE_COLORS = {
+    "cli": "\033[93m",  # bright yellow
+    "env": "\033[92m",  # bright green
+    "dotenv": "\033[96m",  # bright cyan
+    "json": "\033[95m",  # magenta
+    "default": "\033[90m",  # dim gray
+}
+
+
+def _supports_color() -> bool:
+    """Return True when ANSI colors are likely to render correctly."""
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("BUBBLECONF_FORCE_COLOR"):
+        return True
+    try:
+        import sys
+
+        return bool(getattr(sys.stderr, "isatty", lambda: False)())
+    except Exception:
+        return False
+
+
+def pretty_log_config(name: str, provenance: Dict[str, Any]) -> None:
+    """Log the fully resolved configuration as a pretty boxed table at INFO.
+
+    Columns: Field | Value | Source. Colors are emitted only when the log
+    target appears to support ANSI escapes (TTY, ``BUBBLECONF_FORCE_COLOR``
+    overrides; ``NO_COLOR`` disables).
+    """
+    use_color = _supports_color()
+
+    def color(text: str, code: str) -> str:
+        return f"{code}{text}{_RESET}" if use_color else text
+
+    rows = []
+    for field_name, info in provenance.items():
+        if isinstance(info, dict):
+            src = str(info.get("source") or "")
+            val = info.get("value")
+        else:
+            src = ""
+            val = info
+        try:
+            val_s = json.dumps(val, separators=(", ", ": "), sort_keys=True)
+        except Exception:
+            val_s = str(val)
+        rows.append((field_name, val_s, src))
+
+    hdr = ("Field", "Value", "Source")
+    all_rows = [hdr] + rows
+    widths = [max(len(r[i]) for r in all_rows) for i in range(3)]
+
+    def fmt_row(cells, *, header: bool = False) -> str:
+        f, v, s = cells
+        f_p = f.ljust(widths[0])
+        v_p = v.ljust(widths[1])
+        s_p = s.ljust(widths[2])
+        if header:
+            f_p = color(f_p, _BOLD)
+            v_p = color(v_p, _BOLD)
+            s_p = color(s_p, _BOLD)
+        else:
+            f_p = color(f_p, _CYAN)
+            src_color = _SOURCE_COLORS.get(s.lower())
+            if src_color:
+                s_p = color(s_p, src_color + _BOLD)
+        return f"\u2502 {f_p} \u2502 {v_p} \u2502 {s_p} \u2502"
+
+    # Box-drawing borders sized to inner widths (account for the
+    # 1-space padding on each side of each cell).
+    def border(left: str, mid: str, right: str, fill: str = "\u2500") -> str:
+        segments = [fill * (w + 2) for w in widths]
+        return left + mid.join(segments) + right
+
+    title = f" Resolved configuration: {name} "
+    top = border("\u250c", "\u252c", "\u2510")
+    sep = border("\u251c", "\u253c", "\u2524")
+    bot = border("\u2514", "\u2534", "\u2518")
+
+    __logger.info(color(title.strip(), _BOLD))
+    __logger.info(top)
+    __logger.info(fmt_row(hdr, header=True))
+    __logger.info(sep)
+    for r in rows:
+        __logger.info(fmt_row(r))
+    __logger.info(bot)
